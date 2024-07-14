@@ -5,7 +5,10 @@ from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
-import sh
+import subprocess
+from helper_functions import count_moves,seconds_to_timestamp
+import logging
+import os
 
 
 #imports for file opening
@@ -15,9 +18,13 @@ import glob
 import time
 import chess_login
 
-
+#set up logger
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 def main():
+
+    
     
     driver = download_recent_pgn()
     chess_matches = find_most_recent_pgn('C:\\Users\\dariu\\Downloads\\')
@@ -121,7 +128,7 @@ def  run_and_record(game_dict,driver):
     
     #This function will run eachgame on the chess.com board and record and save to a sub folder
     # driver = driver
-    print("loading games into simulator")
+    print("Opening chess.com")
     try:
         driver.get("https://www.chess.com/")
         driver.maximize_window()
@@ -158,9 +165,9 @@ def  run_and_record(game_dict,driver):
     #for every game in dict
     for title,game in game_dict.items():
 
-        pass
-        #click pgn reader
-        pgn_box = driver.find_element("xpath","//textarea[@aria-label='Paste one or more PGNs, or drag & drop your PGN file here.']")
+        #pass
+        #click pgn reader 
+        pgn_box = driver.find_element("xpath","//*[@id='board-layout-sidebar']/div/div/div[1]/div/div[2]/div[7]/div/div/textarea")
         pgn_box.click()
 
         #paste into paste into pgn reader
@@ -174,19 +181,56 @@ def  run_and_record(game_dict,driver):
         to_start_button.click()
 
         #calculate number of moves in the game
+        number_of_moves = int(count_moves(game)) * 2
+        print(f"Number of moves calculated: {number_of_moves}")
 
-        #multiply moves by default time interval to calculate length of video
-        length_of_recording = "00:00:10"
+        #slowdown rate (Initial rate is 1 second per move) 
+        slowdown_rate = 1 
 
+        num_moves_with_buffer = (int(number_of_moves) * slowdown_rate) + 20
+        print(f"Number of moves with buffer: {num_moves_with_buffer}")
+     
+
+        #convert to time
+        length_of_recording = seconds_to_timestamp(num_moves_with_buffer)
+        print(f"Length of recording: {length_of_recording}")
+
+        logger.info("getting record.sh file path")
+        #check file path of record.sh
+        script_path = os.path.join(os.getcwd(), 'record.sh').replace('\\', '/')
+
+        print(f"record.sh path: {script_path}")
+
+        logger.info('Attempting recording')
         #start recording
-        sh.bash('record.sh', length_of_recording)
+        bash_path =r'C:\Program Files\Git\usr\bin\bash.exe'
+        try:
+            result = subprocess.run([bash_path,'./record.sh', length_of_recording],capture_output=True, text=True, check=True)
+            print(result.stdout)
+            print(result.stderr)
 
-        #press play
+        except FileNotFoundError:
+            print("Unable to locate record.sh")
 
+        except subprocess.CalledProcessError as e:
+            print(f"An error occurred while running the script: {e}")
+            print(e.stdout)
+            print(e.stderr)
+        #wait
+        #time.sleep(5)
+
+        #press next move and wait x seconds
+        logger.info("Beginning game moves")
+        next_move_button = driver.find_element("xpath","/html/body/div[4]/div/div/div[3]/div[1]/button[4]/span")
+        for _ in range(int(number_of_moves)):
+            next_move_button.click()
+            time.sleep(slowdown_rate)
+        logger.info("All moves complete")
         #when game is finished save video file to sub folder
 
         #give the title of the game as the name of the file
-
+        print("finished")
+        return "end of game"
 
 def generate_thumbnail():
     #This function will use a prompt to create an appropriate thumbnail and save to a folder witht the corret title.
