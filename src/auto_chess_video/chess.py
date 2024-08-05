@@ -24,16 +24,12 @@ logger.setLevel(logging.INFO)
 
 def main():
 
-    
-    
     driver = download_recent_pgn()
     chess_matches = find_most_recent_pgn('C:\\Users\\dariu\\Downloads\\')
     chess_match_dict = format_games(chess_matches)
     recordings =run_and_record(chess_match_dict,driver)
     # generate_thumbnail()
     # post_on_youtube()
-
-
 
 
 def find_most_recent_pgn(directory):
@@ -46,11 +42,9 @@ def find_most_recent_pgn(directory):
     if files_in_downloads:
         #get file path of most recent pgn file
         most_recent_file = max(files_in_downloads, key= os.path.getmtime)
-
         #read the file
         with open(most_recent_file, "r") as file:
             return file.read()
-
 
 def download_recent_pgn():
     #keep window open when done
@@ -73,7 +67,6 @@ def download_recent_pgn():
     return driver
 
 def format_games(chess_matches):
-
     #get the first line of the string to save as event line
     event =[]
     for letter in chess_matches:
@@ -82,14 +75,10 @@ def format_games(chess_matches):
         else:
             break
     event.append("]")
-
     #This is the event name
     event_joined = "".join(event)
-
     print(f"Event is called:\n{event_joined}")
-
     #split into a list containing individual games
-
     single_games_no_event = chess_matches.split(event_joined)
 
     single_games_with_event = []
@@ -98,36 +87,26 @@ def format_games(chess_matches):
         single_games_with_event.append(f"{event_joined}{game}")
 
     single_games_with_event = single_games_with_event[1:]
-    
     #store the games in a dict with a title as key
     game_dict = {}
 
     for game in single_games_with_event:
         split_lines = game.splitlines()
-
-
         white_player = split_lines[4][8:-2]
         black_player = split_lines[5][8:-2]
-
         white_player_temp = white_player.split(',')
         white_player_ordered = white_player_temp[0].strip() + " " +  white_player_temp[1].strip()
-
         black_player_temp = black_player.split(',')
         black_player_ordered = black_player_temp[1].strip() + " " + black_player_temp[0].strip()
-        i = 1
         title = f"{white_player_ordered} vs {black_player_ordered} "
-
         #add game + title to dict k = title, v = game
         game_dict[title] = game
     print("Games stored in dicts")
     
     return game_dict
 
-
 def  run_and_record(game_dict,driver):
-    
     #This function will run eachgame on the chess.com board and record and save to a sub folder
-    # driver = driver
     print("Opening chess.com")
     try:
         driver.get("https://www.chess.com/")
@@ -137,7 +116,6 @@ def  run_and_record(game_dict,driver):
     time.sleep(3)
     #log in
     links = driver.find_elements("xpath","//a[@href]")
-
     for link in links:
         if "Log In" in link.get_attribute("innerHTML"):
             link.click()
@@ -164,18 +142,14 @@ def  run_and_record(game_dict,driver):
     
     #for every game in dict
     for title,game in game_dict.items():
-
-        #pass
         #click pgn reader 
         pgn_box = driver.find_element("xpath","//*[@id='board-layout-sidebar']/div/div/div[1]/div/div[2]/div[7]/div/div/textarea")
         pgn_box.click()
-
         #paste into paste into pgn reader
         pgn_box.send_keys(game)
         #click add game
         add_game_button = driver.find_element("xpath","//button[contains(@class, 'cc-button-component') and contains(@class, 'cc-button-primary') and @type='button']")
         add_game_button.click()
-
         #press go to first move
         to_start_button = driver.find_element("xpath","//button[@aria-label='First Move']")
         to_start_button.click()
@@ -186,19 +160,16 @@ def  run_and_record(game_dict,driver):
 
         #slowdown rate (Initial rate is 1 second per move) 
         slowdown_rate = 1 
-
         num_moves_with_buffer = (int(number_of_moves) * slowdown_rate) + 20
         print(f"Number of moves with buffer: {num_moves_with_buffer}")
-     
 
         #convert to time
         length_of_recording = seconds_to_timestamp(num_moves_with_buffer)
         print(f"Length of recording: {length_of_recording}")
-
         logger.info("getting record.sh file path")
+
         #check file path of record.sh
         script_path = os.path.join(os.getcwd(), 'record.sh').replace('\\', '/')
-
         print(f"record.sh path: {script_path}")
 
         logger.info('Attempting recording')
@@ -216,8 +187,6 @@ def  run_and_record(game_dict,driver):
             print(f"An error occurred while running the script: {e}")
             print(e.stdout)
             print(e.stderr)
-        #wait
-        #time.sleep(5)
 
         #press next move and wait x seconds
         logger.info("Beginning game moves")
@@ -237,12 +206,10 @@ def generate_thumbnail():
     pass
 
 
-
 def post_on_youtube(recordings):
     #this function will take the recordings and upload them to youtube at specific time slots or every x time while there are new games.
 
     #title must be correct
-
     pass
 
 
