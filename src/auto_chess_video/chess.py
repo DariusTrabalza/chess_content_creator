@@ -47,11 +47,14 @@ def find_most_recent_pgn(directory):
             return file.read()
 
 def download_recent_pgn():
+    os.environ['WDM_ARCH'] = 'x64'
     #keep window open when done
     options = Options()
     options.add_experimental_option("detach", True)
+    chrome_driver_path = chess_login.chromedriver_path
+    print(chrome_driver_path)
     try:
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()),options=options)
+        driver = webdriver.Chrome(service=Service(chrome_driver_path),options=options)
         
     except Exception as e:
         print(f"Driver was not created\nError:\n{e}")
