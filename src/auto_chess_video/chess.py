@@ -141,10 +141,12 @@ def  run_and_record(game_dict,driver):
     login_confirm.click()
 
     #go to game explorer
-    driver.get("https://www.chess.com/analysis?tab=analysis")
+   # driver.get("https://www.chess.com/analysis?tab=analysis")
     
     #for every game in dict
     for title,game in game_dict.items():
+        #go to game explorer
+        driver.get("https://www.chess.com/analysis?tab=analysis")
         #click pgn reader 
         pgn_box = driver.find_element("xpath","//*[@id='board-layout-sidebar']/div/div/div[1]/div/div[2]/div[7]/div/div/textarea")
         pgn_box.click()
@@ -178,8 +180,11 @@ def  run_and_record(game_dict,driver):
         logger.info('Attempting recording')
         #start recording
         bash_path =r'C:\Program Files\Git\usr\bin\bash.exe'
+        title_formatted = title.strip().replace(' ','_' )
+
+
         try:
-            result = subprocess.run([bash_path,'./record.sh', length_of_recording],capture_output=True, text=True, check=True)
+            result = subprocess.run([bash_path,'./record.sh', length_of_recording,title_formatted],capture_output=True, text=True, check=True)
             print(result.stdout)
             print(result.stderr)
 
@@ -201,8 +206,8 @@ def  run_and_record(game_dict,driver):
         #when game is finished save video file to sub folder
 
         #give the title of the game as the name of the file
-        print("finished")
-        return "end of game"
+        print(f"finished {title}")
+        
 
 def generate_thumbnail():
     #This function will use a prompt to create an appropriate thumbnail and save to a folder witht the corret title.
