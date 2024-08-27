@@ -1,3 +1,7 @@
 chess_login.py
 project_notes.md
 venv/
+__pycache__/
+ffmpeg_output.log
+ffmpeg_pid.txt
+tempCodeRunnerFile.py

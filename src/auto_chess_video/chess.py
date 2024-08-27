@@ -9,6 +9,8 @@ import subprocess
 from helper_functions import count_moves,seconds_to_timestamp
 import logging
 import os
+import requests
+from openai import OpenAI
 
 
 #imports for file opening
@@ -27,9 +29,9 @@ def main():
     driver = download_recent_pgn()
     chess_matches = find_most_recent_pgn('C:\\Users\\dariu\\Downloads\\')
     chess_match_dict = format_games(chess_matches)
-    recordings =run_and_record(chess_match_dict,driver)
-    # generate_thumbnail()
-    # post_on_youtube()
+    run_and_record(chess_match_dict,driver)
+    generate_thumbnail(chess_match_dict)
+    post_on_youtube(driver)
 
 
 def find_most_recent_pgn(directory):
@@ -51,6 +53,12 @@ def download_recent_pgn():
     #keep window open when done
     options = Options()
     options.add_experimental_option("detach", True)
+    ###
+    options.add_argument("--disable-web-security")
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    options.add_experimental_option('useAutomationExtension', False)
+    ###
     chrome_driver_path = chess_login.chromedriver_path
     print(chrome_driver_path)
     try:
@@ -94,10 +102,12 @@ def format_games(chess_matches):
     game_dict = {}
 
     for game in single_games_with_event:
+        print(game)
         split_lines = game.splitlines()
         white_player = split_lines[4][8:-2]
         black_player = split_lines[5][8:-2]
         white_player_temp = white_player.split(',')
+        print(white_player_temp)
         white_player_ordered = white_player_temp[0].strip() + " " +  white_player_temp[1].strip()
         black_player_temp = black_player.split(',')
         black_player_ordered = black_player_temp[1].strip() + " " + black_player_temp[0].strip()
@@ -139,9 +149,6 @@ def  run_and_record(game_dict,driver):
 
     login_confirm = driver.find_element("xpath","//button[@id='login']")
     login_confirm.click()
-
-    #go to game explorer
-   # driver.get("https://www.chess.com/analysis?tab=analysis")
     
     #for every game in dict
     for title,game in game_dict.items():
@@ -209,15 +216,98 @@ def  run_and_record(game_dict,driver):
         print(f"finished {title}")
         
 
-def generate_thumbnail():
-    #This function will use a prompt to create an appropriate thumbnail and save to a folder witht the corret title.
-    pass
+def generate_thumbnail(game_dict):
+    #for every match generate a thumbnail    
+    for title,game in game_dict.items():
+        #connect to openAI 
+        client = OpenAI(api_key = chess_login.openai_key)
+        response = client.images.generate(
+        model="dall-e-3",
+        prompt="using current trends of top performing youtube thumbnail colours and compositions, create a thumbnail for a in intense chess battle in the style of interesting 20th century artists. Do not feature any people in this image, also no writing should be in the image",
+        size="1024x1024",
+        quality="standard",
+        #num of images
+        n=1,
+        )
+        #store response
+        image_url = response.data[0].url
+        
+        try:
+            #Send a GET request to the URL
+            response = requests.get(image_url)
+        except Exception as e:
+            print(e)
+
+        #Check if the request was successful
+        if response.status_code == 200:
+            image_path = os.path.join("thumbnails", f"{title}.png")
+            # Save the image to the current directory with the specified filename
+            with open(image_path, "wb") as file:
+                file.write(response.content)
+            print(f"{title} image saved successfully!")
+        else:
+            print(f"Failed to retrieve the image for {title}. Status code:{response.status_code}")
+            
 
 
-def post_on_youtube(recordings):
+def post_on_youtube(driver):
     #this function will take the recordings and upload them to youtube at specific time slots or every x time while there are new games.
+    #go to youtube studio.com
+    driver.get("https://studio.youtube.com/")
 
-    #title must be correct
+    # try:
+       
+    #     accept_terms_button =driver.find_element("xpath","//*[@id='yDmH0d']/c-wiz/div/div/div/div[2]/div[1]/div[3]/div[1]/form[2]/div/div/button/span")
+    #     accept_terms_button.click()
+    # except Exception as e:
+    #     print(e)
+
+    #log in
+    # sign_in_button =driver.find_element("xpath","//*[@id='topbar']/div[2]/div[2]/ytd-button-renderer/yt-button-shape/a/yt-touch-feedback-shape/div/div[2]")
+    # sign_in_button.click()
+
+    email_box = driver.find_element("xpath","//*[@id='identifierId']")
+    email_box.send_keys(chess_login.youtube_email)
+
+    next_button =driver.find_element("xpath","//*[@id='identifierNext']/div/button/span")
+    next_button.click()
+
+    time.sleep(5)
+    youtube_password = driver.find_element("xpath", "//input[@type='password']")
+    print("element found")
+    print(youtube_password)
+    youtube_password.send_keys(chess_login.youtube_password)
+    print('password complete')
+
+    next_button =driver.find_element("xpath","//*[@id='passwordNext']/div/button/span")
+    next_button.click()
+
+    time.sleep(5)
+    chess_account = driver.find_element("xpath","//yt-formatted-string[text()='No Time For Chess']")
+    chess_account.click()   
+
+
+    #select upload video
+
+    #find the video
+
+    #title should be done
+
+    #Enter a description
+
+    #upload thumbnail
+
+    #click next
+
+    #click next again
+
+
+    #click next again
+
+
+    #click public
+
+    #click publish
     pass
 
 
