@@ -53,12 +53,12 @@ def download_recent_pgn():
     #keep window open when done
     options = Options()
     options.add_experimental_option("detach", True)
-    ###
+    #allow youtube login automatically
     options.add_argument("--disable-web-security")
     options.add_argument("--disable-blink-features=AutomationControlled")
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
     options.add_experimental_option('useAutomationExtension', False)
-    ###
+    #set path to correct version of chrome driver
     chrome_driver_path = chess_login.chromedriver_path
     print(chrome_driver_path)
     try:
@@ -103,6 +103,7 @@ def format_games(chess_matches):
 
     for game in single_games_with_event:
         print(game)
+        #get player names
         split_lines = game.splitlines()
         white_player = split_lines[4][8:-2]
         black_player = split_lines[5][8:-2]
@@ -111,9 +112,13 @@ def format_games(chess_matches):
         white_player_ordered = white_player_temp[0].strip() + " " +  white_player_temp[1].strip()
         black_player_temp = black_player.split(',')
         black_player_ordered = black_player_temp[1].strip() + " " + black_player_temp[0].strip()
-        title = f"{white_player_ordered} vs {black_player_ordered} "
+        #get round 
+        round = split_lines[3][8:-2]
+        event_name = event_joined[8:-2]
+        title = f"{white_player_ordered} vs {black_player_ordered} {event_name} round {round} "
         #add game + title to dict k = title, v = game
         game_dict[title] = game
+        print(title)
     print("Games stored in dicts")
     
     return game_dict
